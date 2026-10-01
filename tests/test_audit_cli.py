@@ -35,7 +35,8 @@ def test_scan_json_and_audit(tmp_path, capsys):
     assert rc == 0
     out = json.loads(capsys.readouterr().out)
     by = {r["file"].split("/")[-1]: r for r in out["results"]}
-    assert by["control_abstract_bore_block.stl"]["verdict"] == "BLOCK"
+    assert by["control_abstract_bore_block.stl"]["verdict"] == "REVIEW"
+    assert "PRIORITY" in by["control_abstract_bore_block.stl"]["reasons"][0]
     assert by["plate.stl"]["verdict"] == "PASS"
     assert by["straw.stl"]["verdict"] in ("PASS", "REVIEW")
     assert sum(out["summary"].values()) == 3
@@ -73,7 +74,7 @@ def test_features_command(tmp_path, capsys):
 
 def test_custom_config(tmp_path, capsys):
     cfgp = tmp_path / "c.yaml"
-    cfgp.write_text("scoring:\n  ruleset: single_signal\n")
+    cfgp.write_text("scoring:\n  ruleset: single_signal\n  geometry_can_block: true\n")
     p = tmp_path / "straw.stl"
     shapes.stepped_tube([(30.0, 4.5, 6.0)]).export(p)
     main(["scan", str(p), "--config", str(cfgp), "--json", "--no-audit"])

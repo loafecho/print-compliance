@@ -33,7 +33,7 @@ scoring:
   ld_stepped_review: 3.0
   # If false, geometry signals alone can never BLOCK: a full-signal match becomes a
   # PRIORITY REVIEW and only an exact blocklist hit blocks. See reports/fp-floor.md.
-  geometry_can_block: true
+  geometry_can_block: false   # since 2026-10-01: shape alone may only send to REVIEW; only exact blocklist hits BLOCK
   non_watertight: review   # "review" or "note": what to do when a body is not watertight
 
 blocklist_path: blocklist.txt   # exact-match geohash blocklist (starts empty)

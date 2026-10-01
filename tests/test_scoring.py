@@ -19,6 +19,13 @@ def bore(d, length, stepped=False, cfg=None):
     }
 
 
+def blocking(cfg):
+    """Copy of cfg with geometry-only BLOCK enabled (off by default since 2026-10-01)."""
+    c2 = copy.deepcopy(cfg)
+    c2["scoring"]["geometry_can_block"] = True
+    return c2
+
+
 def body(bores, watertight=True):
     return {"watertight": watertight, "bores": bores, "rails": None}
 
@@ -47,7 +54,7 @@ def test_caliber_plus_stepped_is_review(cfg):
 
 
 def test_all_three_signals_block_with_readable_reason(cfg):
-    r = score_file([body([bore(9.02, 9.02 * 14.2, stepped=True, cfg=cfg)])], cfg)
+    r = score_file([body([bore(9.02, 9.02 * 14.2, stepped=True, cfg=cfg)])], blocking(cfg))
     assert r["verdict"] == "BLOCK"
     reason = r["reasons"][0]
     assert "bore 9.02mm (caliber band 9.0)" in reason
@@ -75,12 +82,12 @@ def test_non_watertight_is_review_by_default(cfg):
 
 
 def test_worst_body_wins(cfg):
-    r = score_file([body([]), body([bore(9.0, 9.0 * 14, stepped=True, cfg=cfg)])], cfg)
+    r = score_file([body([]), body([bore(9.0, 9.0 * 14, stepped=True, cfg=cfg)])], blocking(cfg))
     assert r["verdict"] == "BLOCK"
 
 
 def test_single_signal_ruleset_flags_caliber_alone(cfg):
-    c2 = copy.deepcopy(cfg)
+    c2 = blocking(cfg)
     c2["scoring"]["ruleset"] = "single_signal"
     assert score_file([body([bore(9.0, 20, cfg=cfg)])], c2)["verdict"] == "BLOCK"
 
@@ -113,3 +120,11 @@ def test_geometry_can_block_false_caps_geometry_at_review(cfg):
     assert "all geometry signals" in r["reasons"][0]
     # the exact-match blocklist still blocks
     assert score_file([body([])], c2, blocklist_hit=True)["verdict"] == "BLOCK"
+
+
+def test_default_config_never_blocks_on_geometry_alone(cfg):
+    # policy since 2026-10-01: shape alone may only send to REVIEW
+    assert cfg["scoring"]["geometry_can_block"] is False
+    r = score_file([body([bore(9.02, 9.02 * 14.2, stepped=True, cfg=cfg)])], cfg)
+    assert r["verdict"] == "REVIEW"
+    assert "PRIORITY" in r["reasons"][0]
