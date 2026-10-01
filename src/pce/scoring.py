@@ -8,7 +8,7 @@ Signals per bore (all generic geometry, none weapon-specific):
 
 ruleset "combination" (default, conservative):
   BLOCK  = caliber AND vlong AND stepped        (all signals agree)
-  REVIEW = caliber AND (long OR stepped)        (any corroborating signal)
+  REVIEW = caliber AND (long OR (stepped AND L/D >= ld_stepped_review))
   PASS   = everything else; a lone caliber-band bore is recorded as a note only.
 ruleset "single_signal" (naive baseline for the FP report): BLOCK = caliber alone.
 
@@ -41,11 +41,14 @@ def _bore_verdict(b: dict, cfg: dict) -> tuple[str, dict]:
         "vlong": b["ld_ratio"] >= sc["ld_block"],
         "stepped": bool(b.get("stepped")),
     }
+    # a step only corroborates when the bore is at least ld_stepped_review diameters
+    # long; shorter stepped holes are counterbores / bearing seats (tuned on tune/ only)
+    sig["stepped_corroborates"] = sig["stepped"] and b["ld_ratio"] >= sc.get("ld_stepped_review", 0.0)
     rs = sc["ruleset"]
     if rs == "combination":
         if sig["caliber"] and sig["vlong"] and sig["stepped"]:
             return "BLOCK", sig
-        if sig["caliber"] and (sig["long"] or sig["stepped"]):
+        if sig["caliber"] and (sig["long"] or sig["stepped_corroborates"]):
             return "REVIEW", sig
         return "PASS", sig
     if rs == "single_signal":

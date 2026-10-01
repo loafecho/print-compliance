@@ -25,6 +25,10 @@ scoring:
   ruleset: combination
   ld_review: 8.0     # length/diameter ratio that counts as a "long bore" signal
   ld_block: 12.0     # length/diameter ratio required (with the other signals) for BLOCK
+  # A stepped bore only corroborates a caliber-band match for REVIEW when the bore is
+  # at least this many diameters long. Added after the v0 baseline, tuned on the
+  # corpus TUNE half only (short counterbores / bearing seats). v0 behaviour = 0.0.
+  ld_stepped_review: 3.0
   non_watertight: review   # "review" or "note": what to do when a body is not watertight
 
 blocklist_path: blocklist.txt   # exact-match geohash blocklist (starts empty)

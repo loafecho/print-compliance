@@ -90,3 +90,16 @@ def test_unknown_ruleset_raises(cfg):
     c2["scoring"]["ruleset"] = "bogus"
     with pytest.raises(ValueError):
         score_file([body([])], c2)
+
+
+def test_short_stepped_counterbore_in_band_is_pass_by_default(cfg):
+    # a 9 mm counterbored hole through a 12 mm thick part: everyday hardware
+    r = score_file([body([bore(9.0, 12, stepped=True, cfg=cfg)])], cfg)
+    assert r["verdict"] == "PASS"
+    assert r["notes"]
+
+
+def test_stepped_review_ld_floor_is_configurable(cfg):
+    c2 = copy.deepcopy(cfg)
+    c2["scoring"]["ld_stepped_review"] = 0.0  # v0 pre-tuning behaviour
+    assert score_file([body([bore(9.0, 12, stepped=True, cfg=cfg)])], c2)["verdict"] == "REVIEW"
