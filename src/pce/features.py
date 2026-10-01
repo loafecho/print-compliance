@@ -14,8 +14,8 @@ Bore detection method (cross-section slicing):
      An abrupt jump between adjacent slices separating two plateaus = "stepped".
   6. Bores found on more than one candidate axis are de-duplicated.
 
-Known limits (documented in README): bores whose axis is not within ~15 degrees of a
-world or principal axis are missed; bores that break out of the surface (open
+Known limits (documented in README): bores tilted more than ~15 degrees from every
+world/principal axis read as inflated ellipses and are missed past ~20 degrees; bores that break out of the surface (open
 channels, U-slots) are not interior rings and are not reported; length resolution is
 one slice spacing; non-watertight meshes may produce partial or no sections.
 """

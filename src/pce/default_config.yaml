@@ -31,6 +31,9 @@ scoring:
   # at least this many diameters long. Added after the v0 baseline, tuned on the
   # corpus TUNE half only (short counterbores / bearing seats). v0 behaviour = 0.0.
   ld_stepped_review: 3.0
+  # If false, geometry signals alone can never BLOCK: a full-signal match becomes a
+  # PRIORITY REVIEW and only an exact blocklist hit blocks. See reports/fp-floor.md.
+  geometry_can_block: true
   non_watertight: review   # "review" or "note": what to do when a body is not watertight
 
 blocklist_path: blocklist.txt   # exact-match geohash blocklist (starts empty)

@@ -7,6 +7,7 @@ Features are computed once per file; the file is then scored under three rule po
   single_signal     - naive baseline: any caliber-band bore -> BLOCK
   v0_combination    - combination rules as first written (ld_stepped_review = 0)
   v1_combination    - the shipped default config (after the one tune-half adjustment)
+  v1_review_only    - v1 with geometry_can_block: false (geometry can only REVIEW)
 The hand-written assessment lives in reports/assessment.md and is appended verbatim.
 """
 from __future__ import annotations
@@ -37,7 +38,10 @@ def rulesets():
     single["scoring"]["ruleset"] = "single_signal"
     v0 = copy.deepcopy(base)
     v0["scoring"]["ld_stepped_review"] = 0.0
-    return {"single_signal": single, "v0_combination": v0, "v1_combination": base}
+    review_only = copy.deepcopy(base)
+    review_only["scoring"]["geometry_can_block"] = False
+    return {"single_signal": single, "v0_combination": v0, "v1_combination": base,
+            "v1_review_only": review_only}
 
 
 def pct(a, n):
@@ -106,7 +110,9 @@ def main():
     w("")
     w("`single_signal` = any bore in a caliber band is flagged (BLOCK). `v0_combination` = "
       "combination rules as first written. `v1_combination` = shipped default: identical except "
-      "`ld_stepped_review: 3.0`, the one adjustment, chosen by looking at the **tune** half only.\n")
+      "`ld_stepped_review: 3.0`, the one adjustment, chosen by looking at the **tune** half only. "
+      "`v1_review_only` = v1 with `geometry_can_block: false`: the same flags, but a full-signal "
+      "match is a PRIORITY REVIEW instead of a BLOCK.\n")
 
     w("## Per category (held-out half)\n")
     w("| category | n | single-signal flags | v0 REVIEW | v0 BLOCK | v1 REVIEW | v1 BLOCK |")

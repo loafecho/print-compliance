@@ -12,6 +12,9 @@ ruleset "combination" (default, conservative):
   PASS   = everything else; a lone caliber-band bore is recorded as a note only.
 ruleset "single_signal" (naive baseline for the FP report): BLOCK = caliber alone.
 
+geometry_can_block: false caps every geometry-only verdict at REVIEW (marked PRIORITY);
+only the exact-match blocklist can then BLOCK.
+
 Also: exact geohash blocklist hit -> BLOCK; non-watertight body -> REVIEW (configurable),
 because the bore detector cannot be trusted on an open mesh.
 """
@@ -86,7 +89,12 @@ def score_file(bodies: list[dict], cfg: dict, blocklist_hit: bool = False) -> di
         for b in body.get("bores", []):
             v, sig = _bore_verdict(b, cfg)
             signals.append({"body": bi, **sig, "verdict": v})
-            if v != "PASS":
+            if v == "BLOCK" and not cfg["scoring"].get("geometry_can_block", True):
+                v = "REVIEW"
+                reasons.append(prefix + "PRIORITY (all geometry signals present, BLOCK disabled): "
+                               + _describe(b, sig))
+                bump(v)
+            elif v != "PASS":
                 bump(v)
                 reasons.append(prefix + _describe(b, sig))
             elif sig["caliber"]:

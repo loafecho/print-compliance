@@ -262,10 +262,40 @@ def combos(rng, n):
         yield f"{kind}_{i:02d}", "combo", m
 
 
+def triple_signal(rng, n):
+    """Legit parts that carry ALL THREE combination signals at once: an in-band bore,
+    long (L/D >= 12), and stepped. Added after the first report showed the corpus only
+    had such parts by chance; these stress the BLOCK rule directly."""
+    kinds = ["pen_barrel_tip", "recorder_body", "dropper_pipette", "telescoping_sleeve"]
+    for i in range(n):
+        kind = kinds[i % 4]
+        idd = band_d(rng, 0.15)
+        wall = rng.uniform(1.2, 3)
+        L = idd * rng.uniform(13, 30)
+        if kind == "pen_barrel_tip":
+            tip = rng.uniform(2.5, 4.0)
+            segs = [(rng.uniform(8, 15), tip / 2, idd / 2 + wall), (L, idd / 2, idd / 2 + wall)]
+        elif kind == "recorder_body":
+            # a wider joint socket at one end; tone holes added below
+            segs = [(L, idd / 2, idd / 2 + wall), (rng.uniform(15, 25), idd / 2 + 1.5, idd / 2 + wall + 2)]
+        elif kind == "dropper_pipette":
+            segs = [(L, idd / 2, idd / 2 + wall), (rng.uniform(15, 30), 1.0, 2.5)]
+        else:  # telescoping sleeve: one section slides into the next
+            segs = [(L * 0.6, idd / 2, idd / 2 + wall), (L * 0.6, idd / 2 + wall + 0.3, idd / 2 + 2 * wall + 0.3)]
+        m = shapes.stepped_tube(segs)
+        if kind == "recorder_body":
+            for k in range(5):
+                m = shapes.drill(m, rng.uniform(3, 6), idd + 4 * wall,
+                                 (0, idd / 2 + wall, L * (0.3 + 0.1 * k)), axis="y")
+        yield f"{kind}_{i:02d}", "triple_signal_legit", m, {"expect_d": idd}
+
+
 PLAN = [
     (l_brackets, 12), (shelf_brackets, 8), (hole_plates, 14), (pins_rods, 12),
     (band_tubes, 20), (general_tubes, 12), (long_thin_tubes, 20), (stepped_bores, 20),
     (vessels, 12), (spools, 8), (gears, 10), (knobs, 10), (combos, 12),
+    # appended (not inserted) so the parts above keep identical random draws
+    (triple_signal, 16),
 ]
 
 

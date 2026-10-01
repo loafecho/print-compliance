@@ -103,3 +103,13 @@ def test_stepped_review_ld_floor_is_configurable(cfg):
     c2 = copy.deepcopy(cfg)
     c2["scoring"]["ld_stepped_review"] = 0.0  # v0 pre-tuning behaviour
     assert score_file([body([bore(9.0, 12, stepped=True, cfg=cfg)])], c2)["verdict"] == "REVIEW"
+
+
+def test_geometry_can_block_false_caps_geometry_at_review(cfg):
+    c2 = copy.deepcopy(cfg)
+    c2["scoring"]["geometry_can_block"] = False
+    r = score_file([body([bore(9.0, 9.0 * 14, stepped=True, cfg=cfg)])], c2)
+    assert r["verdict"] == "REVIEW"
+    assert "all geometry signals" in r["reasons"][0]
+    # the exact-match blocklist still blocks
+    assert score_file([body([])], c2, blocklist_hit=True)["verdict"] == "BLOCK"

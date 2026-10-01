@@ -1,0 +1,3 @@
+# Exact-match geometry blocklist (Layer 1 fallback).
+# One 64-hex geohash per line (as printed by `pce scan --json`), optional note after it.
+# Starts empty on purpose.
