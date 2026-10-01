@@ -1,0 +1,31 @@
+# print-compliance-engine default configuration (Phase 1).
+# Units are millimetres. This is a SCREENING config: it flags combinations of
+# generic geometric signals for human review. It is not a weapon specification.
+
+caliber_bands:
+  # Generic, publicly known nominal bore diameters (mm). A bore "matches" when
+  # its measured diameter is within +/- tolerance_mm of any nominal value.
+  nominal_mm: [5.56, 7.62, 9.0, 11.43]
+  tolerance_mm: 0.3
+
+bore_detection:
+  max_slices_per_axis: 240     # cross-sections taken along each candidate axis
+  min_step_mm: 0.25            # finest slice spacing
+  max_circle_deviation: 0.04   # max |r_i - R| / R for a ring to count as a circle
+  min_area_ratio: 0.86         # ring area / (pi R^2); rejects hexagons/squares
+  min_diameter_mm: 1.0         # ignore tiny loops (tessellation noise)
+  min_track_slices: 3          # a bore must persist across >= this many slices
+  step_change_mm: 0.4          # adjacent-slice diameter jump that counts as a step...
+  step_change_rel: 0.06        # ...or this fraction of the diameter, whichever is larger
+  min_segment_mm: 2.0          # a constant-diameter plateau must be at least this long
+
+scoring:
+  # ruleset: "combination" (default) or "single_signal" (naive baseline kept
+  # only so the FP report can show what combination logic buys).
+  ruleset: combination
+  ld_review: 8.0     # length/diameter ratio that counts as a "long bore" signal
+  ld_block: 12.0     # length/diameter ratio required (with the other signals) for BLOCK
+  non_watertight: review   # "review" or "note": what to do when a body is not watertight
+
+blocklist_path: blocklist.txt   # exact-match geohash blocklist (starts empty)
+audit_log_path: audit/scan-log.jsonl

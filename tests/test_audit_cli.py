@@ -20,6 +20,7 @@ def test_append_record(tmp_path):
 
 
 def _folder(tmp_path):
+    tmp_path.mkdir(parents=True, exist_ok=True)
     shapes.stepped_tube([(100.0, 4.5, 6.0)]).export(tmp_path / "straw.stl")
     trimesh.creation.box((20, 20, 5)).export(tmp_path / "plate.stl")
     shapes.control_abstract_bore_block().export(tmp_path / "control_abstract_bore_block.stl")
