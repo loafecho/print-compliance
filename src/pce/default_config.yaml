@@ -18,6 +18,8 @@ bore_detection:
   step_change_mm: 0.4          # adjacent-slice diameter jump that counts as a step...
   step_change_rel: 0.06        # ...or this fraction of the diameter, whichever is larger
   min_segment_mm: 2.0          # a constant-diameter plateau must be at least this long
+  merge_gap_diameters: 2.0     # join collinear same-diameter bore pieces split by a cross-hole
+                               # gap of up to this many diameters (closes a split-the-bore evasion)
 
 scoring:
   # ruleset: "combination" (default) or "single_signal" (naive baseline kept

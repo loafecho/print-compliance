@@ -156,6 +156,37 @@ def _chain(circles, axis, gap=1):
     return chains
 
 
+def _merge_chains(chains, axis, step, cfg):
+    """Join collinear, same-diameter chains separated by a short gap. A cross-hole or
+    side port breaks the void ring on a few slices; it is still one bore. Without this,
+    cross-drilling a bore would split it and hide its true length."""
+    bd = cfg["bore_detection"]
+    chains = sorted(chains, key=lambda ch: ch[0][0])
+    merged = True
+    while merged:
+        merged = False
+        for a in range(len(chains)):
+            for b in range(len(chains)):
+                A, B = chains[a], chains[b]
+                if a == b or B[0][0] <= A[-1][0]:
+                    continue
+                (ai, ac, ad), (bi, bc, bdia) = A[-1], B[0]
+                gap_mm = (bi - ai - 1) * step
+                if gap_mm > bd["merge_gap_diameters"] * min(ad, bdia):
+                    continue
+                v = bc - ac
+                perp = float(np.linalg.norm(v - (v @ axis) * axis))
+                thr = max(bd["step_change_mm"], bd["step_change_rel"] * min(ad, bdia))
+                if perp <= max(0.5, 0.25 * min(ad, bdia)) and abs(ad - bdia) <= thr:
+                    chains[a] = A + B
+                    chains.pop(b)
+                    merged = True
+                    break
+            if merged:
+                break
+    return chains
+
+
 def _plateaus(diams: np.ndarray, step: float, cfg):
     bd = cfg["bore_detection"]
     thr = lambda a, b: max(bd["step_change_mm"], bd["step_change_rel"] * min(a, b))  # noqa: E731
@@ -185,7 +216,7 @@ def find_bores(mesh: trimesh.Trimesh, cfg: dict) -> list[dict]:
     raw = []
     for axis in _candidate_axes(mesh):
         circles, step = _circles_along(mesh, axis, cfg)
-        for ch in _chain(circles, axis):
+        for ch in _merge_chains(_chain(circles, axis), axis, step, cfg):
             if len(ch) < bd["min_track_slices"]:
                 continue
             idx = np.array([c[0] for c in ch])
@@ -223,6 +254,7 @@ def find_bores(mesh: trimesh.Trimesh, cfg: dict) -> list[dict]:
                 "segments": [{"diameter_mm": round(p["diameter_mm"], 3),
                               "length_mm": round(p["length_mm"], 2)} for p in plateaus],
                 "n_slices": int(len(ch)),
+                "interruptions": int(np.sum(np.diff(idx) > 2)),
                 "caliber_match": match,
                 "_axis": axis,
                 "_center": centers.mean(0),

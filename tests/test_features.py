@@ -79,3 +79,16 @@ def test_non_watertight_body_features_do_not_crash(open_mesh, cfg):
 
 def test_rails_stub():
     assert detect_rails(None) is None
+
+
+def test_cross_drilled_tube_is_still_one_bore(cfg):
+    # a tube with perpendicular side holes (e.g. a whistle/flute body): the side holes
+    # break the void ring on a few slices, but it is still one continuous bore
+    from pce import shapes
+
+    m = shapes.stepped_tube([(150.0, 4.0, 6.0)])
+    for z in (50.0, 75.0, 100.0):
+        m = shapes.drill(m, 5.0, 20.0, (0, 5.0, z), axis="y")
+    bores = [b for b in find_bores(m, cfg) if abs(b["diameter_mm"] - 8.0) < 0.3]
+    assert len(bores) == 1
+    assert bores[0]["length_mm"] == pytest.approx(150.0, abs=4.0)
