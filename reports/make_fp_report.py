@@ -6,8 +6,10 @@
 Features are computed once per file; the file is then scored under three rule postures:
   single_signal     - naive baseline: any caliber-band bore -> BLOCK
   v0_combination    - combination rules as first written (ld_stepped_review = 0)
-  v1_combination    - the shipped default config (after the one tune-half adjustment)
-  v1_review_only    - v1 with geometry_can_block: false (geometry can only REVIEW)
+  v1_combination    - the default thresholds (after the one tune-half adjustment) with
+                      geometry_can_block: true
+  v1_review_only    - the shipped default config: v1 with geometry_can_block: false
+                      (geometry can only REVIEW)
 The hand-written assessment lives in reports/assessment.md and is appended verbatim.
 """
 from __future__ import annotations
@@ -33,7 +35,11 @@ ASSESS = ROOT / "reports" / "assessment.md"
 
 
 def rulesets():
-    base = load_config(None)
+    # The shipped default is geometry_can_block: false. The blocking postures are
+    # measured with it switched on so the report shows what geometry alone would BLOCK.
+    default = load_config(None)
+    base = copy.deepcopy(default)
+    base["scoring"]["geometry_can_block"] = True
     single = copy.deepcopy(base)
     single["scoring"]["ruleset"] = "single_signal"
     v0 = copy.deepcopy(base)
@@ -87,14 +93,17 @@ def main():
 
     hold = [r for r in rows if r["split"] == "holdout"]
     c = Counter(r["scores"]["v1_combination"]["verdict"] for r in hold)
-    w("## Headline (held-out half, shipped default rules)\n")
+    w("## Headline (held-out half, v1 thresholds with geometry BLOCK enabled)\n")
     w(f"- Parts: **{len(hold)}**")
     w(f"- PASS {c['PASS']} / REVIEW {c['REVIEW']} / BLOCK {c['BLOCK']}")
     w(f"- **Hard FP rate (BLOCK): {pct(c['BLOCK'], len(hold))}**")
     w(f"- **Soft FP rate (REVIEW): {pct(c['REVIEW'], len(hold))}**")
     v = ctl["v1_combination"]
     w(f"- Should-flag control `control_abstract_bore_block`: **{v['verdict']}** "
-      f"({'; '.join(v['reasons'])})\n")
+      f"({'; '.join(v['reasons'])})")
+    d = Counter(r["scores"]["v1_review_only"]["verdict"] for r in hold)
+    w(f"- Shipped default (`geometry_can_block: false`): PASS {d['PASS']} / REVIEW {d['REVIEW']} / "
+      f"BLOCK {d['BLOCK']}; control: **{ctl['v1_review_only']['verdict']}**\n")
 
     w("## Rule posture comparison\n")
     w("| ruleset | split | n | PASS | REVIEW | BLOCK | hard FP | soft FP | any flag | control |")
@@ -109,10 +118,11 @@ def main():
               f"{ctl[name]['verdict']} |")
     w("")
     w("`single_signal` = any bore in a caliber band is flagged (BLOCK). `v0_combination` = "
-      "combination rules as first written. `v1_combination` = shipped default: identical except "
-      "`ld_stepped_review: 3.0`, the one adjustment, chosen by looking at the **tune** half only. "
-      "`v1_review_only` = v1 with `geometry_can_block: false`: the same flags, but a full-signal "
-      "match is a PRIORITY REVIEW instead of a BLOCK.\n")
+      "combination rules as first written. `v1_combination` = the default thresholds: identical except "
+      "`ld_stepped_review: 3.0`, the one adjustment, chosen by looking at the **tune** half only, "
+      "run with `geometry_can_block: true`. `v1_review_only` = the shipped default (v1 with "
+      "`geometry_can_block: false`): the same flags, but a full-signal match is a PRIORITY REVIEW "
+      "instead of a BLOCK.\n")
 
     w("## Per category (held-out half)\n")
     w("| category | n | single-signal flags | v0 REVIEW | v0 BLOCK | v1 REVIEW | v1 BLOCK |")
@@ -128,7 +138,7 @@ def main():
           f"{cnt('v1_combination', 'BLOCK')} |")
     w("")
 
-    w("## Every non-PASS legit part (shipped default rules, both halves)\n")
+    w("## Every non-PASS legit part (v1_combination, both halves)\n")
     w("| split | file | category | verdict | reasons |")
     w("|---|---|---|---|---|")
     for r in sorted(rows, key=lambda r: (r["split"] != "holdout",

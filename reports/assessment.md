@@ -2,7 +2,7 @@
 
 **Bottom line: geometry signals alone can't push the BLOCK false-positive rate to near zero.** They work as a screen that sorts files into PASS and REVIEW. A geometry-only BLOCK needs a second layer behind it (provenance, a near-duplicate match against known-bad files, a model, or a human).
 
-### What trips the rules (held-out half, shipped rules)
+### What trips the rules (held-out half, v1 rules with geometry BLOCK enabled)
 
 1. **`triple_signal_legit`: 8/8 BLOCK.** Pen barrels with a writing-tip step, recorder bodies with a joint socket, dropper/pipette tubes, and telescoping sleeves. A long, stepped, in-band bore is exactly what these objects are. At the level of "a cylindrical hole with a diameter profile" they are indistinguishable from the abstract control, and the control BLOCKs for the same three reasons. No threshold separates them. Moving `ld_block` or the band tolerance trades these FPs for misses one-for-one.
 2. **`long_thin_tube`: 6/10 flagged** (5 REVIEW, 1 BLOCK). Antenna tubes, curtain-rod sleeves and long straws with an in-band ID clear `ld_review`. The BLOCK is `flute_body_13`, whose bore is long, in band and socketed.
@@ -22,7 +22,7 @@ The naive single-signal rule ("any bore in a caliber band") flags **49.5%** of t
 
 ### Recommendation
 
-Run with `geometry_can_block: false` until a second layer exists. In that posture a full-signal match becomes a **PRIORITY REVIEW**, and only the exact-match geohash blocklist BLOCKs. Held-out results in that posture: **0.0% BLOCK, 22.6% REVIEW** (the same files are flagged, just none are auto-rejected). The control still goes red (REVIEW, marked PRIORITY). With the default (`true`), roughly 1 in 10 innocent long stepped tubes in this stress corpus gets hard-rejected.
+Run with `geometry_can_block: false` until a second layer exists (this is now the shipped default). In that posture a full-signal match becomes a **PRIORITY REVIEW**, and only the exact-match geohash blocklist BLOCKs. Held-out results in that posture: **0.0% BLOCK, 22.6% REVIEW** (the same files are flagged, just none are auto-rejected). The control still goes red (REVIEW, marked PRIORITY). With `geometry_can_block: true`, roughly 1 in 10 innocent long stepped tubes in this stress corpus gets hard-rejected.
 
 ### Detector limits that bias these numbers
 

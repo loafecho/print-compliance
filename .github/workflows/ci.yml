@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.19"
+
+      - name: Install dependencies from the lockfile
+        run: uv sync --locked
+
+      - name: Lint (ruff)
+        run: uvx ruff@0.17.3 check .
+
+      - name: Unit tests (pytest)
+        run: uv run pytest -q
+
+      - name: CLI smoke scan of the generated control
+        run: |
+          uv run python -c "from pathlib import Path; import sys; sys.path.insert(0, 'corpus'); import generate_legit as g; print(g.generate_control(Path('corpus/control')))"
+          uv run pce scan corpus/control --json --no-audit > scan.json
+          python3 -c "import json; r = json.load(open('scan.json'))['results'][0]; print(r['verdict'], r['reasons'][0]); assert r['verdict'] == 'REVIEW' and 'PRIORITY' in r['reasons'][0]"

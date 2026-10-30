@@ -1,16 +1,17 @@
 # False-positive floor report: Phase 1 functional-geometry rules
 
-Generated 2026-10-01 by `reports/make_fp_report.py`. Corpus: 186 programmatically generated legitimate parts (`corpus/generate_legit.py`, seed 20260922), split per category into 93 tune / 93 held-out. Feature extraction took 153s (0.82s/part).
+Generated 2026-10-30 by `reports/make_fp_report.py` at engine commit `45b8516`. Corpus: 186 programmatically generated legitimate parts (`corpus/generate_legit.py`, seed 20260922), split per category into 93 tune / 93 held-out. Feature extraction took 174s (0.93s/part).
 
 Every part in the corpus is innocent, so **any BLOCK is a hard false positive and any REVIEW is a soft false positive.**
 
-## Headline (held-out half, shipped default rules)
+## Headline (held-out half, v1 thresholds with geometry BLOCK enabled)
 
 - Parts: **93**
 - PASS 72 / REVIEW 12 / BLOCK 9
 - **Hard FP rate (BLOCK): 9.7%**
 - **Soft FP rate (REVIEW): 12.9%**
 - Should-flag control `control_abstract_bore_block`: **BLOCK** (bore 8.99mm (caliber band 9.0) with L/D 16.7 and length 150.0mm and stepped profile (8.99, 10.99 mm))
+- Shipped default (`geometry_can_block: false`): PASS 72 / REVIEW 21 / BLOCK 0; control: **REVIEW**
 
 ## Rule posture comparison
 
@@ -29,7 +30,7 @@ Every part in the corpus is innocent, so **any BLOCK is a hard false positive an
 | v1_review_only | holdout | 93 | 72 | 21 | 0 | 0.0% | 22.6% | 22.6% | REVIEW |
 | v1_review_only | all | 186 | 148 | 38 | 0 | 0.0% | 20.4% | 20.4% | REVIEW |
 
-`single_signal` = any bore in a caliber band is flagged (BLOCK). `v0_combination` = combination rules as first written. `v1_combination` = shipped default: identical except `ld_stepped_review: 3.0`, the one adjustment, chosen by looking at the **tune** half only. `v1_review_only` = v1 with `geometry_can_block: false`: the same flags, but a full-signal match is a PRIORITY REVIEW instead of a BLOCK.
+`single_signal` = any bore in a caliber band is flagged (BLOCK). `v0_combination` = combination rules as first written. `v1_combination` = the default thresholds: identical except `ld_stepped_review: 3.0`, the one adjustment, chosen by looking at the **tune** half only, run with `geometry_can_block: true`. `v1_review_only` = the shipped default (v1 with `geometry_can_block: false`): the same flags, but a full-signal match is a PRIORITY REVIEW instead of a BLOCK.
 
 ## Per category (held-out half)
 
@@ -49,7 +50,7 @@ Every part in the corpus is innocent, so **any BLOCK is a hard false positive an
 | tube_other | 6 | 0 | 0 | 0 | 0 | 0 |
 | vessel | 6 | 1 | 1 | 0 | 1 | 0 |
 
-## Every non-PASS legit part (shipped default rules, both halves)
+## Every non-PASS legit part (v1_combination, both halves)
 
 | split | file | category | verdict | reasons |
 |---|---|---|---|---|
@@ -113,7 +114,7 @@ This includes 4 band tubes exported at a random tilt (found via the principal ax
 
 **Bottom line: geometry signals alone can't push the BLOCK false-positive rate to near zero.** They work as a screen that sorts files into PASS and REVIEW. A geometry-only BLOCK needs a second layer behind it (provenance, a near-duplicate match against known-bad files, a model, or a human).
 
-### What trips the rules (held-out half, shipped rules)
+### What trips the rules (held-out half, v1 rules with geometry BLOCK enabled)
 
 1. **`triple_signal_legit`: 8/8 BLOCK.** Pen barrels with a writing-tip step, recorder bodies with a joint socket, dropper/pipette tubes, and telescoping sleeves. A long, stepped, in-band bore is exactly what these objects are. At the level of "a cylindrical hole with a diameter profile" they are indistinguishable from the abstract control, and the control BLOCKs for the same three reasons. No threshold separates them. Moving `ld_block` or the band tolerance trades these FPs for misses one-for-one.
 2. **`long_thin_tube`: 6/10 flagged** (5 REVIEW, 1 BLOCK). Antenna tubes, curtain-rod sleeves and long straws with an in-band ID clear `ld_review`. The BLOCK is `flute_body_13`, whose bore is long, in band and socketed.
@@ -133,7 +134,7 @@ The naive single-signal rule ("any bore in a caliber band") flags **49.5%** of t
 
 ### Recommendation
 
-Run with `geometry_can_block: false` until a second layer exists. In that posture a full-signal match becomes a **PRIORITY REVIEW**, and only the exact-match geohash blocklist BLOCKs. Held-out results in that posture: **0.0% BLOCK, 22.6% REVIEW** (the same files are flagged, just none are auto-rejected). The control still goes red (REVIEW, marked PRIORITY). With the default (`true`), roughly 1 in 10 innocent long stepped tubes in this stress corpus gets hard-rejected.
+Run with `geometry_can_block: false` until a second layer exists (this is now the shipped default). In that posture a full-signal match becomes a **PRIORITY REVIEW**, and only the exact-match geohash blocklist BLOCKs. Held-out results in that posture: **0.0% BLOCK, 22.6% REVIEW** (the same files are flagged, just none are auto-rejected). The control still goes red (REVIEW, marked PRIORITY). With `geometry_can_block: true`, roughly 1 in 10 innocent long stepped tubes in this stress corpus gets hard-rejected.
 
 ### Detector limits that bias these numbers
 
