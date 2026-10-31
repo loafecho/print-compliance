@@ -38,7 +38,7 @@ It is a screening tool, not a weapon specification. It flags combinations of gen
 - Full signal: in a caliber band AND L/D >= `ld_block` (12) AND stepped. With the shipped default `geometry_can_block: false` this is a **PRIORITY REVIEW**. Set it to `true` and it becomes a **BLOCK**.
 - **REVIEW**: in a caliber band AND (L/D >= `ld_review` (8) OR (stepped AND L/D >= `ld_stepped_review` (3))).
 - **PASS** otherwise. A lone in-band bore is recorded as a note, not a flag.
-- An exact blocklist hit is always **BLOCK**. A non-watertight body is **REVIEW** (set `non_watertight: note` to relax this). A file that fails to load is **REVIEW**.
+- An exact blocklist hit is always **BLOCK**. A non-watertight body is **REVIEW** (set `non_watertight: note` to relax this). A file that fails to load is **REVIEW**. Anything the scanner cannot fully account for also fails closed to **REVIEW**: a file of an unsupported type, a 3MF with embedded G-code, an ambiguous root model, unresolved components or a non-millimetre unit it cannot convert, a cross-section with overlapping shells, a bore-detection error, or a file over the `limits` (size, bodies, faces, wall-clock budget). In a multi-body file the combined geometry is also checked, so a bore split across bodies is scored whole.
 
 All thresholds live in [`src/pce/default_config.yaml`](src/pce/default_config.yaml). Pass a partial YAML or TOML file with `--config` to override any of them; unknown keys are rejected.
 
@@ -90,7 +90,7 @@ Read these before trusting a PASS.
 - A bore tilted more than about 15° from every world and principal axis is measured as an inflated ellipse (out of band), and it is missed entirely past about 20°.
 - Bores that break out of the surface (open channels, U-slots) are not void loops and are not reported.
 - Coarse polygonal bores (7 or fewer facets) fail the circle test. That is intended for hex and square holes, but it is an evasion route.
-- Length resolution is one slice spacing (at most span/240, at least 0.25 mm). Units are assumed to be millimetres.
+- Length resolution is one slice spacing (span/240, clamped to 0.25-4 mm). STL units are assumed to be millimetres; 3MF units are converted.
 - Non-watertight meshes may section partially, which is why they default to REVIEW.
 - External shape is ignored, and rail/interface detection is not implemented.
 - The geohash is scale-invariant and quantized to 3 decimals. It survives rename, translation, rotation, uniform scaling and re-export, but not remeshing, and it does not distinguish mirror images. Shapes whose proportions agree to about 1% collide (two such pairs exist in the corpus), so a plain primitive should never be blocklisted.

@@ -24,7 +24,7 @@ def _folder(tmp_path):
     shapes.stepped_tube([(100.0, 4.5, 6.0)]).export(tmp_path / "straw.stl")
     trimesh.creation.box((20, 20, 5)).export(tmp_path / "plate.stl")
     shapes.control_abstract_bore_block().export(tmp_path / "control_abstract_bore_block.stl")
-    (tmp_path / "notes.txt").write_text("ignored")
+    (tmp_path / "notes.txt").write_text("not a mesh")
     return tmp_path
 
 
@@ -39,9 +39,11 @@ def test_scan_json_and_audit(tmp_path, capsys):
     assert "PRIORITY" in by["control_abstract_bore_block.stl"]["reasons"][0]
     assert by["plate.stl"]["verdict"] == "PASS"
     assert by["straw.stl"]["verdict"] in ("PASS", "REVIEW")
-    assert sum(out["summary"].values()) == 3
+    # unsupported files are never skipped silently: REVIEW + audit row
+    assert by["notes.txt"]["verdict"] == "REVIEW"
+    assert sum(out["summary"].values()) == 4
     rows = [json.loads(line) for line in log.read_text().splitlines()]
-    assert len(rows) == 3
+    assert len(rows) == 4
     plate = next(r for r in rows if r["file"].endswith("plate.stl"))
     assert plate["sha256"] == hashlib.sha256((folder / "plate.stl").read_bytes()).hexdigest()
     for key in ("geohash", "features", "verdict", "reasons", "timestamp"):

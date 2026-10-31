@@ -26,11 +26,15 @@ import trimesh
 def descriptor(mesh: trimesh.Trimesh) -> dict:
     w = mesh.area_faces.astype(np.float64)
     A = w.sum()
+    if not np.isfinite(A) or A <= 0:
+        raise ValueError("degenerate mesh: zero surface area")
     c = mesh.triangles_center.astype(np.float64)
     mu = (c * w[:, None]).sum(0) / A
     X = c - mu
     r = np.linalg.norm(X, axis=1)
     scale = np.sqrt((w * r * r).sum() / A)
+    if not np.isfinite(scale) or scale <= 0:
+        raise ValueError("degenerate mesh: zero extent")
     Xn, rn, wn = X / scale, r / scale, w / A
     cov = (Xn * wn[:, None]).T @ Xn
     evals, evecs = np.linalg.eigh(cov)

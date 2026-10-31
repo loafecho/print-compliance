@@ -20,6 +20,12 @@ bore_detection:
   min_segment_mm: 2.0          # a constant-diameter plateau must be at least this long
   merge_gap_diameters: 2.0     # join collinear same-diameter bore pieces split by a cross-hole
                                # gap of up to this many diameters (closes a split-the-bore evasion)
+  # Fail-closed analysis caps: exceeding any of these sends the body to REVIEW
+  # (bore_error) instead of letting it read as "no bore found".
+  max_step_mm: 4.0             # coarsest slice spacing allowed, whatever the body's extent
+  max_total_slices: 2000       # bodies that need more slices than this at max_step_mm -> REVIEW
+  max_loops_per_section: 500   # closed loops in one cross-section
+  max_circles_per_axis: 20000  # circular sections collected along one axis
 
 scoring:
   # ruleset: "combination" (default) or "single_signal" (naive baseline kept
@@ -35,6 +41,15 @@ scoring:
   # PRIORITY REVIEW and only an exact blocklist hit blocks. See reports/fp-floor.md.
   geometry_can_block: false   # since 2026-10-01: shape alone may only send to REVIEW; only exact blocklist hits BLOCK
   non_watertight: review   # "review" or "note": what to do when a body is not watertight
+
+limits:
+  # Per-file input and work bounds. Anything over a limit is not analysed and is
+  # sent to REVIEW, so a hostile file cannot stall or exhaust a batch scan.
+  max_file_mb: 100             # file size on disk
+  max_uncompressed_mb: 512     # total declared uncompressed size of a 3MF package
+  max_bodies: 256              # bodies (3MF build instances / STL solids) per file
+  max_faces: 2000000           # total triangles per file
+  scan_seconds: 120            # wall-clock budget for bore analysis of one file
 
 blocklist_path: blocklist.txt   # exact-match geohash blocklist (starts empty)
 audit_log_path: audit/scan-log.jsonl

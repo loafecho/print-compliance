@@ -76,7 +76,10 @@ def score_file(bodies: list[dict], cfg: dict, blocklist_hit: bool = False) -> di
         bump("BLOCK")
         reasons.append("geometry hash matches the exact-match blocklist")
     for bi, body in enumerate(bodies):
-        prefix = f"body {bi}: " if len(bodies) > 1 else ""
+        if body.get("label"):
+            prefix = f"{body['label']}: "
+        else:
+            prefix = f"body {bi}: " if len(bodies) > 1 else ""
         if not body.get("watertight", True):
             if cfg["scoring"]["non_watertight"] == "review":
                 bump("REVIEW")
